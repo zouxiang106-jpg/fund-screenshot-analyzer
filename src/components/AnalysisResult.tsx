@@ -6,6 +6,7 @@ import type { UploadedImage } from "@/components/ImagePreviewGrid";
 type AnalysisResultProps = {
   images: UploadedImage[];
   isAnalyzing: boolean;
+  analyzePhase?: "ocr" | "ai" | null;
   analysis: FundAnalysis | null;
   error: string | null;
   onRetry: () => void;
@@ -44,6 +45,7 @@ const diagnosticLabels = [
 export default function AnalysisResult({
   images,
   isAnalyzing,
+  analyzePhase = null,
   analysis,
   error,
   onRetry,
@@ -91,10 +93,12 @@ export default function AnalysisResult({
               <div className="flex min-h-[200px] flex-col items-center justify-center gap-4">
                 <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-500" />
                 <p className="text-sm font-medium text-slate-600">
-                  正在识别截图文字并调用 DeepSeek 分析（{images.length} 张）…
+                  {analyzePhase === "ocr"
+                    ? `正在本地识别截图文字（${images.length} 张）…`
+                    : `正在调用 DeepSeek 分析（${images.length} 张）…`}
                 </p>
                 <p className="text-xs text-slate-400">
-                  图片较多时可能需要 1～3 分钟，请稍候
+                  首次识别需下载语言包，请耐心等待 1～3 分钟
                 </p>
               </div>
             ) : error ? (

@@ -1,20 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["tesseract.js", "sharp"],
+  serverExternalPackages: ["sharp"],
   experimental: {
-    proxyClientMaxBodySize: "12mb",
+    proxyClientMaxBodySize: "2mb",
     serverActions: {
-      bodySizeLimit: "12mb",
+      bodySizeLimit: "2mb",
     },
-  },
-  outputFileTracingIncludes: {
-    "/api/analyze": [
-      "./node_modules/tesseract.js/**",
-      "./node_modules/tesseract.js-core/**",
-      "./node_modules/@tesseract.js-data/**",
-      "./node_modules/sharp/**",
-    ],
   },
 };
 

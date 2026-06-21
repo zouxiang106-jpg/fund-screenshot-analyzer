@@ -21,6 +21,7 @@ function createUploadedImage(file: File): UploadedImage {
 export default function Home() {
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analyzePhase, setAnalyzePhase] = useState<"ocr" | "ai" | null>(null);
   const [analysis, setAnalysis] = useState<FundAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
   const requestIdRef = useRef(0);
@@ -30,18 +31,24 @@ export default function Home() {
 
     const requestId = ++requestIdRef.current;
     setIsAnalyzing(true);
+    setAnalyzePhase("ocr");
     setError(null);
     setAnalysis(null);
 
     try {
-      const formData = new FormData();
-      targetImages.forEach((image) => {
-        formData.append("images", image.file);
-      });
+      const { extractTextFromFiles } = await import("@/lib/client-ocr");
+      const ocrTexts = await extractTextFromFiles(
+        targetImages.map((image) => image.file),
+      );
+
+      if (requestId !== requestIdRef.current) return;
+
+      setAnalyzePhase("ai");
 
       const response = await fetch("/api/analyze", {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ocrTexts }),
       });
 
       if (!response.ok) {
@@ -69,10 +76,11 @@ export default function Home() {
       setAnalysis(result.data);
     } catch {
       if (requestId !== requestIdRef.current) return;
-      setError("连接中断：服务器可能内存不足已崩溃，请先只上传 1～2 张图，并重启网站服务");
+      setError("连接中断，请用 Chrome/Edge 打开网站后重试");
     } finally {
       if (requestId === requestIdRef.current) {
         setIsAnalyzing(false);
+        setAnalyzePhase(null);
       }
     }
   }, []);
@@ -196,6 +204,7 @@ export default function Home() {
           <AnalysisResult
             images={images}
             isAnalyzing={isAnalyzing}
+            analyzePhase={analyzePhase}
             analysis={analysis}
             error={error}
             onRetry={handleRetry}
