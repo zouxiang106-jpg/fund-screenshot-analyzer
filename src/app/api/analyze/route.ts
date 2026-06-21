@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
-import { analyzeFundScreenshots } from "@/lib/deepseek";
+import { analyzeFromOcrTexts } from "@/lib/deepseek";
 import { MAX_FILE_SIZE, MAX_IMAGES } from "@/lib/constants";
+import { compressImageForOcr } from "@/lib/image";
+import { extractTextFromImages } from "@/lib/ocr";
 import type { AnalyzeApiResponse } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -60,17 +62,16 @@ export async function POST(request: Request) {
       }
     }
 
-    const imageInputs = await Promise.all(
-      files.map(async (file) => {
-        const buffer = Buffer.from(await file.arrayBuffer());
-        return {
-          base64: buffer.toString("base64"),
-          mimeType: file.type || "image/jpeg",
-        };
-      }),
-    );
+    const ocrTexts: string[] = [];
 
-    const analysis = await analyzeFundScreenshots(imageInputs, apiKey, model);
+    for (const file of files) {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const compressed = await compressImageForOcr(buffer);
+      const [text] = await extractTextFromImages([compressed]);
+      ocrTexts.push(text);
+    }
+
+    const analysis = await analyzeFromOcrTexts(ocrTexts, apiKey, model);
 
     return NextResponse.json<AnalyzeApiResponse>({
       success: true,

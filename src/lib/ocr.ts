@@ -1,20 +1,39 @@
+import path from "path";
+
 type ImageInput = {
   base64: string;
   mimeType: string;
 };
 
+function getTesseractOptions() {
+  const langPath = path.join(
+    process.cwd(),
+    "node_modules",
+    "@tesseract.js-data",
+    "chi_sim",
+    "4.0.0",
+  );
+
+  return {
+    langPath,
+    cachePath: path.join(process.cwd(), ".tesseract-cache"),
+    gzip: true,
+  };
+}
+
 export async function extractTextFromImages(
   images: ImageInput[],
 ): Promise<string[]> {
   const { createWorker } = await import("tesseract.js");
-  const worker = await createWorker("chi_sim+eng");
+  const tesseractOptions = getTesseractOptions();
+  const results: string[] = [];
 
-  try {
-    const results: string[] = [];
+  for (let index = 0; index < images.length; index++) {
+    const image = images[index];
+    const buffer = Buffer.from(image.base64, "base64");
+    const worker = await createWorker("chi_sim", undefined, tesseractOptions);
 
-    for (let index = 0; index < images.length; index++) {
-      const image = images[index];
-      const buffer = Buffer.from(image.base64, "base64");
+    try {
       const { data } = await worker.recognize(buffer);
       const text = data.text.trim();
 
@@ -23,12 +42,16 @@ export async function extractTextFromImages(
           ? text
           : "（本张截图未能识别出有效文字，请结合上下文推断或说明信息不足）",
       );
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "OCR 识别失败";
+      results.push(`（OCR 失败：${message}）`);
+    } finally {
+      await worker.terminate();
     }
-
-    return results;
-  } finally {
-    await worker.terminate();
   }
+
+  return results;
 }
 
 export function formatOcrForPrompt(ocrTexts: string[]): string {

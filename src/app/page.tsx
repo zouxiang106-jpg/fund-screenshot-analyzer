@@ -44,6 +44,19 @@ export default function Home() {
         body: formData,
       });
 
+      if (!response.ok) {
+        let message = "分析失败，请稍后重试";
+        try {
+          const data = (await response.json()) as AnalyzeApiResponse;
+          if (!data.success) message = data.error;
+        } catch {
+          message = "服务器处理失败，可能内存不足，请减少截图张数后重试";
+        }
+        if (requestId !== requestIdRef.current) return;
+        setError(message);
+        return;
+      }
+
       const result = (await response.json()) as AnalyzeApiResponse;
 
       if (requestId !== requestIdRef.current) return;
@@ -56,7 +69,7 @@ export default function Home() {
       setAnalysis(result.data);
     } catch {
       if (requestId !== requestIdRef.current) return;
-      setError("网络异常，请检查连接后重试");
+      setError("连接中断：服务器可能内存不足已崩溃，请先只上传 1～2 张图，并重启网站服务");
     } finally {
       if (requestId === requestIdRef.current) {
         setIsAnalyzing(false);
@@ -86,7 +99,6 @@ export default function Home() {
 
         const newImages = accepted.map(createUploadedImage);
         const next = [...prev, ...newImages];
-        void runAnalysis(next);
         return next;
       });
     },
@@ -105,8 +117,6 @@ export default function Home() {
           setAnalysis(null);
           setError(null);
           setIsAnalyzing(false);
-        } else {
-          void runAnalysis(next);
         }
 
         return next;
@@ -178,7 +188,7 @@ export default function Home() {
                 onClick={handleRetry}
                 className="rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-medium text-white shadow-lg shadow-emerald-600/20 transition-colors hover:bg-emerald-700"
               >
-                {analysis || error ? "重新分析" : "开始 AI 分析"}
+                开始 AI 分析（{images.length} 张）
               </button>
             </div>
           )}

@@ -71,6 +71,14 @@ export async function analyzeFundScreenshots(
   model: string,
 ): Promise<FundAnalysis> {
   const ocrTexts = await extractTextFromImages(images);
+  return analyzeFromOcrTexts(ocrTexts, apiKey, model);
+}
+
+export async function analyzeFromOcrTexts(
+  ocrTexts: string[],
+  apiKey: string,
+  model: string,
+): Promise<FundAnalysis> {
   const ocrContent = formatOcrForPrompt(ocrTexts);
 
   const response = await fetch(DEEPSEEK_API_URL, {
@@ -85,7 +93,7 @@ export async function analyzeFundScreenshots(
         { role: "system", content: FUND_MENTOR_SYSTEM_PROMPT },
         {
           role: "user",
-          content: `${FUND_MENTOR_USER_PROMPT(images.length)}\n\n${ocrContent}`,
+          content: `${FUND_MENTOR_USER_PROMPT(ocrTexts.length)}\n\n${ocrContent}`,
         },
       ],
       response_format: { type: "json_object" },
