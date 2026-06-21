@@ -9,7 +9,7 @@ module.exports = {
       env: {
         HOSTNAME: "0.0.0.0",
         PORT: "3000",
-        NODE_OPTIONS: "--max-old-space-size=1536",
+        NODE_OPTIONS: "--max-old-space-size=3072",
       },
     },
   ],
