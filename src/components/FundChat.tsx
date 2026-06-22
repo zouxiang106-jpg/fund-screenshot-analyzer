@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChatMessage, FundAnalysis } from "@/lib/types";
+import { createId } from "@/lib/id";
 
 type FundChatProps = {
   analysis: FundAnalysis;
 };
 
 function createMessageId(): string {
-  return crypto.randomUUID();
+  return createId();
 }
 
 async function readStreamResponse(

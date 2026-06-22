@@ -8,11 +8,12 @@ import ImagePreviewGrid, {
 } from "@/components/ImagePreviewGrid";
 import ImageUpload from "@/components/ImageUpload";
 import { MAX_IMAGES } from "@/lib/constants";
+import { createId } from "@/lib/id";
 import type { AnalyzeApiResponse, FundAnalysis } from "@/lib/types";
 
 function createUploadedImage(file: File): UploadedImage {
   return {
-    id: `${file.name}-${file.lastModified}-${crypto.randomUUID()}`,
+    id: `${file.name}-${file.lastModified}-${createId()}`,
     file,
     previewUrl: URL.createObjectURL(file),
   };
@@ -74,9 +75,13 @@ export default function Home() {
       }
 
       setAnalysis(result.data);
-    } catch {
+    } catch (err) {
       if (requestId !== requestIdRef.current) return;
-      setError("连接中断，请用 Chrome/Edge 打开网站后重试");
+      const message =
+        err instanceof Error
+          ? err.message
+          : "连接中断，分析过程中请勿刷新页面";
+      setError(message);
     } finally {
       if (requestId === requestIdRef.current) {
         setIsAnalyzing(false);
